@@ -7,6 +7,7 @@ This repository is initialized for **Checkpoint 1**. It serves as a collaborativ
 | :--- | :--- | 
 | **Member A** | Warson Long
 | **Member B** | Yuxuan Xi
+| **Member C** | Shawn Wang
 
 ---
 
