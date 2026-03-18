@@ -5,10 +5,8 @@ This repository is initialized for **Checkpoint 1**. It serves as a collaborativ
 ## 👥 Team Members
 | Name | GitHub Username 
 | :--- | :--- | 
-| **Member A** | Warson Long
-| **Member B** | Yuxuan Xi
-| **Member C** | Shawn Wang
-| **Member D** | Nuwanga Niroshan
+| **Member 1** | Warson Long
+| **Member 2** | Yuxuan Xi
 
 ---
 
