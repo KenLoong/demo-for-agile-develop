@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+{% block title %}{{ post.title }} · UWA Skill-Swap{% endblock %}
+
+{% block content %}
+<article class="mb-5">
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb small mb-0">
+            <li class="breadcrumb-item"><a href="{{ url_for('index') }}">Discover</a></li>
+            <li class="breadcrumb-item active" aria-current="page">{{ post.title }}</li>
+        </ol>
+    </nav>
+
+    <header class="d-flex flex-wrap align-items-start justify-content-between gap-3 mb-3">
+        <div>
+            <span class="badge bg-primary mb-2">{{ post.category }}</span>
+            <h1 class="h2 mb-1">{{ post.title }}</h1>
+            <p class="text-muted small mb-0">
+                {{ post.author.username }} · {{ post.timestamp.strftime('%Y-%m-%d %H:%M') }}
+                · <span id="interest-count-label">{{ interest_count }}</span> interested
+            </p>
+        </div>
+        <div class="d-flex flex-wrap gap-2">
+            {% if current_user.is_authenticated and post.author == current_user %}
+                <a href="{{ url_for('update_post', post_id=post.id) }}" class="btn btn-outline-primary">Edit</a>
+                <form method="post" action="{{ url_for('delete_post', post_id=post.id) }}" class="d-inline"
+                      onsubmit="return confirm('Delete this post permanently?');">
+                    <button type="submit" class="btn btn-outline-danger">Delete</button>
+                </form>
+            {% elif current_user.is_authenticated %}
+                <button type="button" id="interest-btn" class="btn btn-primary"
+                        data-post-id="{{ post.id }}"
+                        data-url="{{ url_for('express_interest', post_id=post.id) }}"
+                        {% if already_interested %}disabled{% endif %}>
+                    {% if already_interested %}Request sent{% else %}I'm interested{% endif %}
+                </button>
+            {% else %}
+                <a href="{{ url_for('login', next=request.path) }}" class="btn btn-primary">Log in to show interest</a>
+            {% endif %}
+        </div>
+    </header>
+
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body">
+            <h2 class="h6 text-uppercase text-muted mb-3">Description</h2>
+            <div class="post-body" style="white-space: pre-wrap;">{{ post.description }}</div>
+        </div>
+    </div>
+</article>
+
+<section class="mb-4">
+    <h2 class="h5 mb-3">Comments</h2>
+    {% set sorted_comments = post.comments|sort(attribute='timestamp') %}
+    {% if sorted_comments %}
+        <ul class="list-group list-group-flush shadow-sm rounded border mb-3">
+            {% for c in sorted_comments %}
+                <li class="list-group-item py-3">
+                    <div class="d-flex justify-content-between align-items-baseline gap-2 mb-1">
+                        <strong class="small">{{ c.user.username }}</strong>
+                        <span class="small text-muted">{{ c.timestamp.strftime('%Y-%m-%d %H:%M') }}</span>
+                    </div>
+                    <p class="mb-0 small" style="white-space: pre-wrap;">{{ c.content }}</p>
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p class="text-muted small">No comments yet. Start the conversation below.</p>
+    {% endif %}
+
+    {% if current_user.is_authenticated %}
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <form method="post" action="{{ url_for('post_comment', post_id=post.id) }}">
+                    {{ form.hidden_tag() }}
+                    <div class="mb-3">
+                        {{ form.content.label(class="form-label") }}
+                        {{ form.content(class="form-control" + (" is-invalid" if form.content.errors else ""), rows=3) }}
+                        {% if form.content.errors %}
+                            <div class="invalid-feedback d-block">{{ form.content.errors[0] }}</div>
+                        {% endif %}
+                    </div>
+                    {{ form.submit(class="btn btn-primary btn-sm") }}
+                </form>
+            </div>
+        </div>
+    {% else %}
+        <p class="small text-muted mb-0"><a href="{{ url_for('login', next=request.path) }}">Log in</a> to leave a comment.</p>
+    {% endif %}
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+    var btn = document.getElementById('interest-btn');
+    if (!btn || btn.disabled) return;
+    var countEl = document.getElementById('interest-count-label');
+    btn.addEventListener('click', function () {
+        if (btn.disabled) return;
+        var url = btn.getAttribute('data-url');
+        $.ajax({ url: url, method: 'POST' })
+            .done(function (res) {
+                btn.disabled = true;
+                btn.textContent = 'Request sent';
+                if (countEl) {
+                    var n = parseInt(countEl.textContent, 10);
+                    countEl.textContent = isNaN(n) ? '1' : String(n + 1);
+                }
+            })
+            .fail(function (xhr) {
+                var msg = (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'Something went wrong.';
+                alert(msg);
+            });
+    });
+})();
+</script>
+{% endblock %}

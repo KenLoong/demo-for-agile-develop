@@ -1,0 +1,14 @@
+# 忽略虚拟环境
+venv/
+.venv/
+
+# 忽略 Python 缓存
+__pycache__/
+*.pyc
+
+# 忽略数据库文件 (每个人的本地测试数据不一样，不要上传)
+*.db
+instance/
+
+# 忽略 Mac 系统文件
+.DS_Store

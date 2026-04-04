@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% block title %}Dashboard · UWA Skill-Swap{% endblock %}
+
+{% block content %}
+<h1 class="h3 mb-4">Dashboard</h1>
+
+<ul class="nav nav-tabs mb-3" id="dashboardTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="tab-posts" data-bs-toggle="tab" data-bs-target="#pane-posts" type="button" role="tab">
+            My skills
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="tab-incoming" data-bs-toggle="tab" data-bs-target="#pane-incoming" type="button" role="tab">
+            Interests received
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="tab-sent" data-bs-toggle="tab" data-bs-target="#pane-sent" type="button" role="tab">
+            My requests
+        </button>
+    </li>
+</ul>
+
+<div class="tab-content">
+    <div class="tab-pane fade show active" id="pane-posts" role="tabpanel">
+        {% if my_posts %}
+            <div class="table-responsive shadow-sm rounded border bg-white">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Title</th>
+                            <th>Category</th>
+                            <th>Posted</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for p in my_posts %}
+                            <tr>
+                                <td><a href="{{ url_for('post_detail', post_id=p.id) }}">{{ p.title }}</a></td>
+                                <td><span class="badge bg-primary">{{ p.category }}</span></td>
+                                <td class="small text-muted">{{ p.timestamp.strftime('%Y-%m-%d') }}</td>
+                                <td class="text-end text-nowrap">
+                                    <a href="{{ url_for('update_post', post_id=p.id) }}" class="btn btn-sm btn-outline-primary">Edit</a>
+                                    <form method="post" action="{{ url_for('delete_post', post_id=p.id) }}" class="d-inline"
+                                          onsubmit="return confirm('Delete this post?');">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                                    </form>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <p class="text-muted">You have not posted any skills yet. <a href="{{ url_for('new_post') }}">Create one</a>.</p>
+        {% endif %}
+    </div>
+
+    <div class="tab-pane fade" id="pane-incoming" role="tabpanel">
+        {% if incoming %}
+            <ul class="list-group shadow-sm">
+                {% for it in incoming %}
+                    <li class="list-group-item py-3">
+                        <div class="d-flex flex-wrap justify-content-between gap-2 mb-1">
+                            <strong>{{ it.sender.username }}</strong>
+                            <span class="small text-muted">{{ it.timestamp.strftime('%Y-%m-%d %H:%M') }}</span>
+                        </div>
+                        <p class="mb-1 small">Interested in your post:
+                            <a href="{{ url_for('post_detail', post_id=it.post_ref.id) }}">{{ it.post_ref.title }}</a>
+                        </p>
+                        <p class="mb-0 small"><span class="text-muted">Contact:</span> {{ it.sender.email }}</p>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p class="text-muted">Nobody has expressed interest in your posts yet.</p>
+        {% endif %}
+    </div>
+
+    <div class="tab-pane fade" id="pane-sent" role="tabpanel">
+        {% if sent %}
+            <ul class="list-group shadow-sm">
+                {% for it in sent %}
+                    <li class="list-group-item py-3">
+                        <div class="d-flex flex-wrap justify-content-between gap-2 mb-1">
+                            <a href="{{ url_for('post_detail', post_id=it.post_ref.id) }}"><strong>{{ it.post_ref.title }}</strong></a>
+                            <span class="small text-muted">{{ it.timestamp.strftime('%Y-%m-%d %H:%M') }}</span>
+                        </div>
+                        <p class="mb-0 small text-muted">By {{ it.post_ref.author.username }} · {{ it.post_ref.category }}</p>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p class="text-muted">You have not requested any skills yet. Browse the <a href="{{ url_for('index') }}">discovery page</a>.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
