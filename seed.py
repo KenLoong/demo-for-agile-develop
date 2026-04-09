@@ -4,11 +4,14 @@ from werkzeug.security import generate_password_hash
 
 def seed_data():
     with app.app_context():
-        # 1. 清空并重建表
-        db.drop_all()
-        db.create_all()
+        # 清空数据（保留迁移管理的 schema；请已执行过 flask db upgrade）
+        Comment.query.delete()
+        Interest.query.delete()
+        Post.query.delete()
+        User.query.delete()
+        db.session.commit()
 
-        # 2. 创建几个测试用户 (密码统一为 password123)
+        # 创建几个测试用户 (密码统一为 password123)
         pw = generate_password_hash('password123')
         u1 = User(username='MemberA', email='a@student.uwa.edu.au', password_hash=pw)
         u2 = User(username='MemberB', email='b@student.uwa.edu.au', password_hash=pw)

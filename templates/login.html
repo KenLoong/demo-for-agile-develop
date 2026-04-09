@@ -7,20 +7,22 @@
         <div class="card shadow-sm border-0">
             <div class="card-body p-4 p-md-5">
                 <h1 class="h4 mb-4 text-center">Log in</h1>
-                <form method="post" action="" novalidate>
+                <form id="login-form" method="post" action="" novalidate>
                     {{ form.hidden_tag() }}
                     <div class="mb-3">
                         {{ form.email.label(class="form-label") }}
-                        {{ form.email(class="form-control" + (" is-invalid" if form.email.errors else ""), autocomplete="email") }}
+                        {{ form.email(class="form-control" + (" is-invalid" if form.email.errors else ""), autocomplete="email", id="login-email") }}
+                        <div id="login-email-err" class="invalid-feedback d-none"></div>
                         {% if form.email.errors %}
-                            <div class="invalid-feedback">{{ form.email.errors[0] }}</div>
+                            <div class="invalid-feedback d-block">{{ form.email.errors[0] }}</div>
                         {% endif %}
                     </div>
                     <div class="mb-4">
                         {{ form.password.label(class="form-label") }}
-                        {{ form.password(class="form-control" + (" is-invalid" if form.password.errors else ""), autocomplete="current-password") }}
+                        {{ form.password(class="form-control" + (" is-invalid" if form.password.errors else ""), autocomplete="current-password", id="login-password") }}
+                        <div id="login-password-err" class="invalid-feedback d-none"></div>
                         {% if form.password.errors %}
-                            <div class="invalid-feedback">{{ form.password.errors[0] }}</div>
+                            <div class="invalid-feedback d-block">{{ form.password.errors[0] }}</div>
                         {% endif %}
                     </div>
                     {{ form.submit(class="btn btn-primary w-100") }}
@@ -32,4 +34,40 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+    var form = document.getElementById('login-form');
+    if (!form) return;
+    var fe = document.getElementById('login-email');
+    var pe = document.getElementById('login-password');
+    var feErr = document.getElementById('login-email-err');
+    var peErr = document.getElementById('login-password-err');
+
+    form.addEventListener('submit', function (ev) {
+        var ok = true;
+        fe.classList.remove('is-invalid');
+        pe.classList.remove('is-invalid');
+        feErr.classList.add('d-none');
+        peErr.classList.add('d-none');
+
+        var em = fe && fe.value ? fe.value.trim() : '';
+        if (!em || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)) {
+            feErr.textContent = 'Enter a valid email address.';
+            feErr.classList.remove('d-none');
+            fe.classList.add('is-invalid');
+            ok = false;
+        }
+        if (!pe || !pe.value) {
+            peErr.textContent = 'Password is required.';
+            peErr.classList.remove('d-none');
+            pe.classList.add('is-invalid');
+            ok = false;
+        }
+        if (!ok) ev.preventDefault();
+    });
+})();
+</script>
 {% endblock %}

@@ -7,25 +7,27 @@
         <h1 class="h3 mb-4">{{ 'Edit skill' if editing else 'Post a new skill' }}</h1>
         <div class="card shadow-sm border-0">
             <div class="card-body p-4">
-                <form method="post" action="">
+                <form id="post-form" method="post" action="" novalidate>
                     {{ form.hidden_tag() }}
                     <div class="mb-3">
                         {{ form.title.label(class="form-label") }}
-                        {{ form.title(class="form-control" + (" is-invalid" if form.title.errors else "")) }}
+                        {{ form.title(class="form-control" + (" is-invalid" if form.title.errors else ""), id="post-title") }}
+                        <div id="post-title-err" class="invalid-feedback d-none"></div>
                         {% if form.title.errors %}
                             <div class="invalid-feedback d-block">{{ form.title.errors[0] }}</div>
                         {% endif %}
                     </div>
                     <div class="mb-3">
                         {{ form.category.label(class="form-label") }}
-                        {{ form.category(class="form-select" + (" is-invalid" if form.category.errors else "")) }}
+                        {{ form.category(class="form-select" + (" is-invalid" if form.category.errors else ""), id="post-category") }}
                         {% if form.category.errors %}
                             <div class="invalid-feedback d-block">{{ form.category.errors[0] }}</div>
                         {% endif %}
                     </div>
                     <div class="mb-4">
                         {{ form.description.label(class="form-label") }}
-                        {{ form.description(class="form-control" + (" is-invalid" if form.description.errors else ""), rows=10, placeholder="Describe what you offer and any expectations…") }}
+                        {{ form.description(class="form-control" + (" is-invalid" if form.description.errors else ""), rows=10, placeholder="Describe what you offer and any expectations…", id="post-description") }}
+                        <div id="post-desc-err" class="invalid-feedback d-none"></div>
                         {% if form.description.errors %}
                             <div class="invalid-feedback d-block">{{ form.description.errors[0] }}</div>
                         {% endif %}
@@ -42,4 +44,45 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+    var form = document.getElementById('post-form');
+    if (!form) return;
+    var t = document.getElementById('post-title');
+    var d = document.getElementById('post-description');
+    var te = document.getElementById('post-title-err');
+    var de = document.getElementById('post-desc-err');
+
+    form.addEventListener('submit', function (ev) {
+        t.classList.remove('is-invalid');
+        d.classList.remove('is-invalid');
+        te.classList.add('d-none');
+        de.classList.add('d-none');
+        var ok = true;
+        var title = t && t.value ? t.value.trim() : '';
+        if (!title) {
+            te.textContent = 'Title is required.';
+            te.classList.remove('d-none');
+            t.classList.add('is-invalid');
+            ok = false;
+        } else if (title.length > 100) {
+            te.textContent = 'Title must be at most 100 characters.';
+            te.classList.remove('d-none');
+            t.classList.add('is-invalid');
+            ok = false;
+        }
+        var desc = d && d.value ? d.value.trim() : '';
+        if (!desc) {
+            de.textContent = 'Description is required.';
+            de.classList.remove('d-none');
+            d.classList.add('is-invalid');
+            ok = false;
+        }
+        if (!ok) ev.preventDefault();
+    });
+})();
+</script>
 {% endblock %}

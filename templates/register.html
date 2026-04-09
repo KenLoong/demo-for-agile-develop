@@ -8,34 +8,38 @@
             <div class="card-body p-4 p-md-5">
                 <h1 class="h4 mb-2 text-center">Create an account</h1>
                 <p class="small text-muted text-center mb-4">Use your <code class="small">@student.uwa.edu.au</code> email.</p>
-                <form method="post" action="" novalidate>
+                <form id="register-form" method="post" action="" novalidate>
                     {{ form.hidden_tag() }}
                     <div class="mb-3">
                         {{ form.username.label(class="form-label") }}
-                        {{ form.username(class="form-control" + (" is-invalid" if form.username.errors else ""), autocomplete="username") }}
+                        {{ form.username(class="form-control" + (" is-invalid" if form.username.errors else ""), autocomplete="username", id="reg-username") }}
+                        <div id="reg-username-err" class="invalid-feedback d-none"></div>
                         {% if form.username.errors %}
-                            <div class="invalid-feedback">{{ form.username.errors[0] }}</div>
+                            <div class="invalid-feedback d-block">{{ form.username.errors[0] }}</div>
                         {% endif %}
                     </div>
                     <div class="mb-3">
                         {{ form.email.label(class="form-label") }}
-                        {{ form.email(class="form-control" + (" is-invalid" if form.email.errors else ""), autocomplete="email") }}
+                        {{ form.email(class="form-control" + (" is-invalid" if form.email.errors else ""), autocomplete="email", id="reg-email") }}
+                        <div id="reg-email-err" class="invalid-feedback d-none"></div>
                         {% if form.email.errors %}
-                            <div class="invalid-feedback">{{ form.email.errors[0] }}</div>
+                            <div class="invalid-feedback d-block">{{ form.email.errors[0] }}</div>
                         {% endif %}
                     </div>
                     <div class="mb-3">
                         {{ form.password.label(class="form-label") }}
-                        {{ form.password(class="form-control" + (" is-invalid" if form.password.errors else ""), autocomplete="new-password") }}
+                        {{ form.password(class="form-control" + (" is-invalid" if form.password.errors else ""), autocomplete="new-password", id="reg-password") }}
+                        <div id="reg-password-err" class="invalid-feedback d-none"></div>
                         {% if form.password.errors %}
-                            <div class="invalid-feedback">{{ form.password.errors[0] }}</div>
+                            <div class="invalid-feedback d-block">{{ form.password.errors[0] }}</div>
                         {% endif %}
                     </div>
                     <div class="mb-4">
                         {{ form.confirm_password.label(class="form-label") }}
-                        {{ form.confirm_password(class="form-control" + (" is-invalid" if form.confirm_password.errors else ""), autocomplete="new-password") }}
+                        {{ form.confirm_password(class="form-control" + (" is-invalid" if form.confirm_password.errors else ""), autocomplete="new-password", id="reg-confirm") }}
+                        <div id="reg-confirm-err" class="invalid-feedback d-none"></div>
                         {% if form.confirm_password.errors %}
-                            <div class="invalid-feedback">{{ form.confirm_password.errors[0] }}</div>
+                            <div class="invalid-feedback d-block">{{ form.confirm_password.errors[0] }}</div>
                         {% endif %}
                     </div>
                     {{ form.submit(class="btn btn-primary w-100") }}
@@ -47,4 +51,55 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+    var form = document.getElementById('register-form');
+    if (!form) return;
+    function pair(fieldId, errId) {
+        return {
+            field: document.getElementById(fieldId),
+            err: document.getElementById(errId)
+        };
+    }
+    var u = pair('reg-username', 'reg-username-err');
+    var e = pair('reg-email', 'reg-email-err');
+    var p = pair('reg-password', 'reg-password-err');
+    var c = pair('reg-confirm', 'reg-confirm-err');
+
+    function show(pair, msg) {
+        if (!pair.field || !pair.err) return;
+        pair.err.textContent = msg || '';
+        pair.err.classList.toggle('d-none', !msg);
+        pair.field.classList.toggle('is-invalid', !!msg);
+    }
+
+    form.addEventListener('submit', function (ev) {
+        [u, e, p, c].forEach(function (x) { show(x, ''); });
+        var ok = true;
+        var uname = u.field ? u.field.value.trim() : '';
+        if (uname.length < 2) {
+            show(u, 'Username must be at least 2 characters.');
+            ok = false;
+        }
+        var em = e.field ? e.field.value.trim().toLowerCase() : '';
+        if (!em.endsWith('@student.uwa.edu.au') || em.indexOf('@') < 1) {
+            show(e, 'Use your @student.uwa.edu.au email.');
+            ok = false;
+        }
+        var pw = p.field ? p.field.value : '';
+        if (pw.length < 6) {
+            show(p, 'Password must be at least 6 characters.');
+            ok = false;
+        }
+        if (c.field && pw !== c.field.value) {
+            show(c, 'Passwords do not match.');
+            ok = false;
+        }
+        if (!ok) ev.preventDefault();
+    });
+})();
+</script>
 {% endblock %}

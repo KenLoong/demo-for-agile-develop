@@ -17,8 +17,9 @@ In a university environment, students possess diverse talents beyond their prima
 *   **User Authentication:** Secure login/logout with Flask-Login; registration enforces `@student.uwa.edu.au` email and password hashing.
 *   **Skill Management (CRUD):** Users can post skills, edit or delete their own listings.
 *   **Dynamic Discovery:** Homepage with **jQuery AJAX** category filtering against `/api/filter`, plus keyword search (title and description).
-*   **Interaction:** Comments on posts; **Express interest** with dashboard views for received and sent requests (including contact email).
-*   **UI:** Responsive layouts with **Bootstrap 5**.
+*   **Interaction:** Comments on posts (**AJAX** submit without a full page reload); **Express interest** with dashboard views for received and sent requests (including contact email).
+*   **Security & config:** **CSRF protection** (Flask-WTF) on forms and AJAX `POST`s; `SECRET_KEY` and optional `DATABASE_URL` read from the environment.
+*   **UI:** Responsive layouts with **Bootstrap 5** and lightweight **client-side validation** on register, login, and post forms.
 
 ---
 
@@ -27,7 +28,7 @@ In a university environment, students possess diverse talents beyond their prima
 | Layer | Technology |
 | :--- | :--- |
 | **Backend** | Python / Flask |
-| **Database** | SQLite + SQLAlchemy (ORM) |
+| **Database** | SQLite + SQLAlchemy (ORM) + Flask-Migrate (Alembic) |
 | **Frontend** | HTML5, Jinja2, Bootstrap 5, JavaScript |
 | **Interactivity** | jQuery + AJAX |
 | **Version Control** | Git / GitHub |
@@ -80,43 +81,61 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-### 4. Database (choose one)
+### 4. Configuration (optional)
 
-**Option A — Sample data (recommended for demos)**  
-Resets the DB and inserts test users/posts/interests (see `seed.py` for emails and passwords):
+Copy `.env.example` to `.env` and set values (see `.gitignore`: `.env` is not committed):
+
+* **`SECRET_KEY`** — required in production; in development you can omit it to use a built-in insecure default.
+* **`DATABASE_URL`** — optional; defaults to `sqlite:///database.db` in the project root.
+
+### 5. Database migrations
+
+Schema is managed with **Flask-Migrate**. After installing dependencies, apply migrations to create or update tables:
+
+```bash
+export FLASK_APP=app.py
+flask db upgrade
+```
+
+On Windows: `set FLASK_APP=app.py` then `flask db upgrade`.
+
+The `migrations/` folder in the repo holds Alembic revision history (evidence of DB migrations for coursework).
+
+### 6. Sample data (optional)
+
+Clears existing rows and inserts demo users/posts/interests. Run **after** `flask db upgrade` so tables exist:
+
 ```bash
 python seed.py
 ```
+
 Test logins (after seeding):
+
 * `a@student.uwa.edu.au` / `password123`
 * `b@student.uwa.edu.au` / `password123`
 
-**Option B — Empty database**  
-Create tables only (no sample rows):
-```bash
-python -c "from app import app, db; app.app_context().push(); db.create_all()"
-```
+### 7. Start the development server
 
-### 5. Start the development server
-
-**Recommended (creates tables automatically if you use `app.py` as entry point):**
-```bash
-python app.py
-```
-Then open **http://127.0.0.1:5000/** in your browser.
-
-**Alternative — Flask CLI**  
-If you use `flask run`, ensure tables exist first (run the `db.create_all()` one-liner in Option B once), then:
 ```bash
 export FLASK_APP=app.py
-# Optional: export FLASK_DEBUG=1
+python app.py
+```
+
+Then open **http://127.0.0.1:5000/** in your browser.
+
+**Alternative — Flask CLI**
+
+```bash
+export FLASK_APP=app.py
 flask run
 ```
+
 On Windows, use `set FLASK_APP=app.py` instead of `export`.
 
 ### Notes
-* The SQLite file is **`database.db`** in the project root (ignored by Git per `.gitignore`). Each developer keeps their own local file.
-* For production, move `SECRET_KEY` out of source code into an environment variable.
+
+* The SQLite file is **`database.db`** in the project root (ignored by Git). Each developer keeps their own local file.
+* Creating a new migration after model changes: `flask db migrate -m "describe change"` then `flask db upgrade`.
 
 ---
 

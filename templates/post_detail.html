@@ -24,6 +24,7 @@
                 <a href="{{ url_for('update_post', post_id=post.id) }}" class="btn btn-outline-primary">Edit</a>
                 <form method="post" action="{{ url_for('delete_post', post_id=post.id) }}" class="d-inline"
                       onsubmit="return confirm('Delete this post permanently?');">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <button type="submit" class="btn btn-outline-danger">Delete</button>
                 </form>
             {% elif current_user.is_authenticated %}
@@ -50,35 +51,33 @@
 <section class="mb-4">
     <h2 class="h5 mb-3">Comments</h2>
     {% set sorted_comments = post.comments|sort(attribute='timestamp') %}
-    {% if sorted_comments %}
-        <ul class="list-group list-group-flush shadow-sm rounded border mb-3">
-            {% for c in sorted_comments %}
-                <li class="list-group-item py-3">
-                    <div class="d-flex justify-content-between align-items-baseline gap-2 mb-1">
-                        <strong class="small">{{ c.user.username }}</strong>
-                        <span class="small text-muted">{{ c.timestamp.strftime('%Y-%m-%d %H:%M') }}</span>
-                    </div>
-                    <p class="mb-0 small" style="white-space: pre-wrap;">{{ c.content }}</p>
-                </li>
-            {% endfor %}
-        </ul>
-    {% else %}
-        <p class="text-muted small">No comments yet. Start the conversation below.</p>
-    {% endif %}
+    <ul id="comment-list" class="list-group list-group-flush shadow-sm rounded border mb-3{% if not sorted_comments %} d-none{% endif %}">
+        {% for c in sorted_comments %}
+            <li class="list-group-item py-3">
+                <div class="d-flex justify-content-between align-items-baseline gap-2 mb-1">
+                    <strong class="small">{{ c.user.username }}</strong>
+                    <span class="small text-muted">{{ c.timestamp.strftime('%Y-%m-%d %H:%M') }}</span>
+                </div>
+                <p class="mb-0 small comment-text" style="white-space: pre-wrap;">{{ c.content }}</p>
+            </li>
+        {% endfor %}
+    </ul>
+    <p id="comment-empty-hint" class="text-muted small {% if sorted_comments %}d-none{% endif %}">No comments yet. Start the conversation below.</p>
 
     {% if current_user.is_authenticated %}
         <div class="card border-0 shadow-sm">
             <div class="card-body">
-                <form method="post" action="{{ url_for('post_comment', post_id=post.id) }}">
+                <form id="comment-form" method="post" action="{{ url_for('post_comment', post_id=post.id) }}" novalidate>
                     {{ form.hidden_tag() }}
                     <div class="mb-3">
                         {{ form.content.label(class="form-label") }}
-                        {{ form.content(class="form-control" + (" is-invalid" if form.content.errors else ""), rows=3) }}
+                        {{ form.content(class="form-control" + (" is-invalid" if form.content.errors else ""), rows=3, id="comment-content") }}
+                        <div id="comment-client-error" class="invalid-feedback d-none"></div>
                         {% if form.content.errors %}
                             <div class="invalid-feedback d-block">{{ form.content.errors[0] }}</div>
                         {% endif %}
                     </div>
-                    {{ form.submit(class="btn btn-primary btn-sm") }}
+                    {{ form.submit(class="btn btn-primary btn-sm", id="comment-submit") }}
                 </form>
             </div>
         </div>
@@ -92,23 +91,79 @@
 <script>
 (function () {
     var btn = document.getElementById('interest-btn');
-    if (!btn || btn.disabled) return;
-    var countEl = document.getElementById('interest-count-label');
-    btn.addEventListener('click', function () {
-        if (btn.disabled) return;
-        var url = btn.getAttribute('data-url');
-        $.ajax({ url: url, method: 'POST' })
-            .done(function (res) {
-                btn.disabled = true;
-                btn.textContent = 'Request sent';
-                if (countEl) {
-                    var n = parseInt(countEl.textContent, 10);
-                    countEl.textContent = isNaN(n) ? '1' : String(n + 1);
+    if (btn && !btn.disabled) {
+        var countEl = document.getElementById('interest-count-label');
+        btn.addEventListener('click', function () {
+            if (btn.disabled) return;
+            var url = btn.getAttribute('data-url');
+            $.ajax({ url: url, method: 'POST' })
+                .done(function () {
+                    btn.disabled = true;
+                    btn.textContent = 'Request sent';
+                    if (countEl) {
+                        var n = parseInt(countEl.textContent, 10);
+                        countEl.textContent = isNaN(n) ? '1' : String(n + 1);
+                    }
+                })
+                .fail(function (xhr) {
+                    var msg = (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'Something went wrong.';
+                    alert(msg);
+                });
+        });
+    }
+
+    var cform = document.getElementById('comment-form');
+    if (!cform) return;
+    var cinput = document.getElementById('comment-content');
+    var cerr = document.getElementById('comment-client-error');
+    var list = document.getElementById('comment-list');
+    var emptyHint = document.getElementById('comment-empty-hint');
+
+    function showCommentError(msg) {
+        if (!cerr) return;
+        cerr.textContent = msg || '';
+        cerr.classList.toggle('d-none', !msg);
+        if (cinput) cinput.classList.toggle('is-invalid', !!msg);
+    }
+
+    cform.addEventListener('submit', function (e) {
+        e.preventDefault();
+        var text = (cinput && cinput.value) ? cinput.value.trim() : '';
+        if (!text) {
+            showCommentError('Please enter a comment.');
+            return;
+        }
+        showCommentError('');
+
+        var fd = new FormData(cform);
+        $.ajax({
+            url: cform.action,
+            method: 'POST',
+            data: fd,
+            processData: false,
+            contentType: false,
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        })
+            .done(function (data) {
+                if (!data.ok) return;
+                if (list) {
+                    list.classList.remove('d-none');
+                    var li = document.createElement('li');
+                    li.className = 'list-group-item py-3';
+                    li.innerHTML = '<div class="d-flex justify-content-between align-items-baseline gap-2 mb-1">' +
+                        '<strong class="small"></strong><span class="small text-muted"></span></div>' +
+                        '<p class="mb-0 small comment-text" style="white-space:pre-wrap;"></p>';
+                    li.querySelector('strong').textContent = data.username;
+                    li.querySelector('.text-muted').textContent = data.timestamp;
+                    li.querySelector('.comment-text').textContent = data.content;
+                    list.appendChild(li);
                 }
+                if (emptyHint) emptyHint.classList.add('d-none');
+                cinput.value = '';
             })
             .fail(function (xhr) {
-                var msg = (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'Something went wrong.';
-                alert(msg);
+                var msg = (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'Could not post comment.';
+                showCommentError(msg);
             });
     });
 })();

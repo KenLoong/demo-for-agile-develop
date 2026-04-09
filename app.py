@@ -1,23 +1,25 @@
 import os
+from dotenv import load_dotenv
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, abort
-from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
+from flask_migrate import Migrate
+from flask_wtf.csrf import CSRFProtect
 from werkzeug.security import generate_password_hash, check_password_hash
 
-# 导入你之前创建的模型和表单
 from models import db, User, Post, Comment, Interest
 from forms import RegistrationForm, LoginForm, PostForm, CommentForm
 
+load_dotenv()
 app = Flask(__name__)
 
-# --- 配置 (Configurations) ---
-# 在实际部署时，应使用环境变量存储 SECRET_KEY
-app.config['SECRET_KEY'] = 'uwa-cits5505-skill-swap-key'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.db'
+# --- 配置：敏感项优先来自环境变量（见 README） ---
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY') or 'dev-only-change-in-production'
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:///database.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-# 初始化插件
 db.init_app(app)
+csrf = CSRFProtect(app)
+migrate = Migrate(app, db)
 login_manager = LoginManager(app)
 login_manager.login_view = 'login' # 未登录时跳转的路由
 login_manager.login_message_category = 'info'
@@ -174,11 +176,25 @@ def delete_post(post_id):
 @login_required
 def post_comment(post_id):
     form = CommentForm()
+    wants_json = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
     if form.validate_on_submit():
         comment = Comment(content=form.content.data, user_id=current_user.id, post_id=post_id)
         db.session.add(comment)
         db.session.commit()
+        if wants_json:
+            return jsonify({
+                'ok': True,
+                'username': current_user.username,
+                'timestamp': comment.timestamp.strftime('%Y-%m-%d %H:%M'),
+                'content': comment.content,
+            })
         flash('Your comment has been added!', 'success')
+    else:
+        if wants_json:
+            msg = form.content.errors[0] if form.content.errors else 'Could not post comment.'
+            return jsonify({'ok': False, 'message': msg}), 400
+        for err in form.content.errors:
+            flash(err, 'danger')
     return redirect(url_for('post_detail', post_id=post_id))
 
 @app.route('/interest/<int:post_id>', methods=['POST'])
@@ -229,9 +245,7 @@ def dashboard():
                            sent=my_sent_requests)
 
 # --- 启动程序 ---
+# 数据库表请使用 Flask-Migrate：`flask db upgrade`（见 README）
 
 if __name__ == '__main__':
-    with app.app_context():
-        # 自动创建数据库（如果不存在）
-        db.create_all()
     app.run(debug=True)
