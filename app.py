@@ -119,7 +119,7 @@ def recommended_posts_for_user(user, limit=6):
     return q.order_by(Post.timestamp.desc()).limit(limit).all()
 
 
-# --- 1. 用户认证路由 (Authentication) ---
+# --- 1. Authentication routes ---
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
@@ -157,7 +157,7 @@ def logout():
     return redirect(url_for('index'))
 
 
-# --- 2. 发现页、筛选 API、用户公开主页 ---
+# --- 2. Discovery page, filter API, public user profile ---
 
 @app.route('/')
 def index():
@@ -229,7 +229,7 @@ def user_profile(username):
     )
 
 
-# --- 3. 帖子管理 (Skill CRUD) ---
+# --- 3. Skill posts (CRUD) ---
 
 @app.route('/post/new', methods=['GET', 'POST'])
 @login_required
@@ -337,7 +337,7 @@ def delete_post(post_id):
     return redirect(url_for('index'))
 
 
-# --- 4. 互动逻辑 (Interactions) ---
+# --- 4. Interactions ---
 
 @app.route('/post/<int:post_id>/comment', methods=['POST'])
 @login_required
@@ -419,7 +419,7 @@ def toggle_bookmark(post_id):
     return jsonify({'ok': True, 'saved': True})
 
 
-# --- 5. 个人仪表盘 (Dashboard) ---
+# --- 5. Dashboard ---
 
 @app.route('/dashboard')
 @login_required
