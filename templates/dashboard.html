@@ -4,7 +4,7 @@
 {% block content %}
 <h1 class="h3 mb-4">Dashboard</h1>
 
-<ul class="nav nav-tabs mb-3" id="dashboardTabs" role="tablist">
+<ul class="nav nav-tabs mb-3 flex-wrap" id="dashboardTabs" role="tablist">
     <li class="nav-item" role="presentation">
         <button class="nav-link active" id="tab-posts" data-bs-toggle="tab" data-bs-target="#pane-posts" type="button" role="tab">
             My skills
@@ -17,7 +17,12 @@
     </li>
     <li class="nav-item" role="presentation">
         <button class="nav-link" id="tab-sent" data-bs-toggle="tab" data-bs-target="#pane-sent" type="button" role="tab">
-            My requests
+            My interests
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="tab-saved" data-bs-toggle="tab" data-bs-target="#pane-saved" type="button" role="tab">
+            Saved for later
         </button>
     </li>
 </ul>
@@ -39,7 +44,7 @@
                         {% for p in my_posts %}
                             <tr>
                                 <td><a href="{{ url_for('post_detail', post_id=p.id) }}">{{ p.title }}</a></td>
-                                <td><span class="badge bg-primary">{{ p.category }}</span></td>
+                                <td><span class="badge bg-primary">{{ p.category.label }}</span></td>
                                 <td class="small text-muted">{{ p.timestamp.strftime('%Y-%m-%d') }}</td>
                                 <td class="text-end text-nowrap">
                                     <a href="{{ url_for('update_post', post_id=p.id) }}" class="btn btn-sm btn-outline-primary">Edit</a>
@@ -65,7 +70,7 @@
                 {% for it in incoming %}
                     <li class="list-group-item py-3">
                         <div class="d-flex flex-wrap justify-content-between gap-2 mb-1">
-                            <strong>{{ it.sender.username }}</strong>
+                            <strong><a href="{{ url_for('user_profile', username=it.sender.username) }}">{{ it.sender.username }}</a></strong>
                             <span class="small text-muted">{{ it.timestamp.strftime('%Y-%m-%d %H:%M') }}</span>
                         </div>
                         <p class="mb-1 small">Interested in your post:
@@ -89,13 +94,52 @@
                             <a href="{{ url_for('post_detail', post_id=it.post_ref.id) }}"><strong>{{ it.post_ref.title }}</strong></a>
                             <span class="small text-muted">{{ it.timestamp.strftime('%Y-%m-%d %H:%M') }}</span>
                         </div>
-                        <p class="mb-0 small text-muted">By {{ it.post_ref.author.username }} · {{ it.post_ref.category }}</p>
+                        <p class="mb-0 small text-muted">
+                            Host: <a href="{{ url_for('user_profile', username=it.post_ref.author.username) }}">{{ it.post_ref.author.username }}</a>
+                            · {{ it.post_ref.category.label }}
+                        </p>
                     </li>
                 {% endfor %}
             </ul>
         {% else %}
-            <p class="text-muted">You have not requested any skills yet. Browse the <a href="{{ url_for('index') }}">discovery page</a>.</p>
+            <p class="text-muted">You have not shown interest in any skills yet. Browse the <a href="{{ url_for('index') }}">discovery page</a>.</p>
+        {% endif %}
+    </div>
+
+    <div class="tab-pane fade" id="pane-saved" role="tabpanel">
+        {% if saved %}
+            <ul class="list-group shadow-sm">
+                {% for bm in saved %}
+                    <li class="list-group-item py-3 d-flex flex-wrap justify-content-between gap-2 align-items-center">
+                        <div>
+                            <a href="{{ url_for('post_detail', post_id=bm.post.id) }}"><strong>{{ bm.post.title }}</strong></a>
+                            <p class="small text-muted mb-0">
+                                <a href="{{ url_for('user_profile', username=bm.post.author.username) }}">{{ bm.post.author.username }}</a>
+                                · {{ bm.post.category.label }}
+                                · saved {{ bm.timestamp.strftime('%Y-%m-%d') }}
+                            </p>
+                        </div>
+                        <button type="button" class="btn btn-sm btn-outline-danger unsave-btn" data-url="{{ url_for('toggle_bookmark', post_id=bm.post.id) }}">Remove</button>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p class="text-muted">No saved posts. Open a skill and click <strong>Save for later</strong>.</p>
         {% endif %}
     </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+    $(document).on('click', '.unsave-btn', function () {
+        var url = $(this).data('url');
+        var item = $(this).closest('li');
+        $.ajax({ url: url, method: 'POST' }).done(function (data) {
+            if (data.ok && !data.saved) item.remove();
+        });
+    });
+})();
+</script>
 {% endblock %}

@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}{{ profile_user.username }} · UWA Skill-Swap{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb small mb-0">
+        <li class="breadcrumb-item"><a href="{{ url_for('index') }}">Discover</a></li>
+        <li class="breadcrumb-item active" aria-current="page">{{ profile_user.username }}</li>
+    </ol>
+</nav>
+
+<div class="d-flex flex-wrap align-items-center gap-3 mb-4">
+    <span class="avatar-circle flex-shrink-0" style="width: 3.5rem; height: 3.5rem; font-size: 1.25rem; background: hsl({{ (profile_user.username|length * 47) % 360 }}, 55%, 42%)">
+        {{ (profile_user.username[0] if profile_user.username else '?')|upper }}
+    </span>
+    <div>
+        <h1 class="h3 mb-1">{{ profile_user.username }}</h1>
+        <p class="text-muted small mb-0">
+            {% if posts|length == 1 %}1 skill listed{% else %}{{ posts|length }} skills listed{% endif %}
+            {% if current_user.is_authenticated and current_user.id == profile_user.id %}
+                · <a href="{{ url_for('dashboard') }}">Your dashboard</a>
+            {% endif %}
+        </p>
+    </div>
+</div>
+
+{% if posts %}
+    <div class="row g-3">
+        {% for post in posts %}
+            <div class="col-md-6 col-xl-4">
+                <a href="{{ url_for('post_detail', post_id=post.id) }}" class="text-decoration-none text-reset">
+                    <div class="card h-100 shadow-sm border-0 overflow-hidden">
+                        {% if post.image_filename %}
+                            <img src="{{ url_for('static', filename='uploads/posts/' + post.image_filename) }}"
+                                 class="w-100 object-fit-cover" alt="" style="height: 120px;">
+                        {% endif %}
+                        <div class="card-body">
+                            <span class="badge bg-primary-subtle text-primary-emphasis mb-1">{{ post.category.label }}</span>
+                            <h2 class="h6 card-title text-truncate mb-0">{{ post.title }}</h2>
+                            <p class="small text-muted mb-0">{{ post.timestamp.strftime('%Y-%m-%d') }}
+                                · {{ post.comment_count }} comments · {{ post.like_count }} likes</p>
+                        </div>
+                    </div>
+                </a>
+            </div>
+        {% endfor %}
+    </div>
+{% else %}
+    <p class="text-muted">No skills posted yet.</p>
+{% endif %}
+{% endblock %}

@@ -7,7 +7,7 @@
         <h1 class="h3 mb-4">{{ 'Edit skill' if editing else 'Post a new skill' }}</h1>
         <div class="card shadow-sm border-0">
             <div class="card-body p-4">
-                <form id="post-form" method="post" action="" novalidate>
+                <form id="post-form" method="post" action="" enctype="multipart/form-data" novalidate>
                     {{ form.hidden_tag() }}
                     <div class="mb-3">
                         {{ form.title.label(class="form-label") }}
@@ -18,15 +18,35 @@
                         {% endif %}
                     </div>
                     <div class="mb-3">
-                        {{ form.category.label(class="form-label") }}
-                        {{ form.category(class="form-select" + (" is-invalid" if form.category.errors else ""), id="post-category") }}
-                        {% if form.category.errors %}
-                            <div class="invalid-feedback d-block">{{ form.category.errors[0] }}</div>
+                        {{ form.category_id.label(class="form-label") }}
+                        {{ form.category_id(class="form-select" + (" is-invalid" if form.category_id.errors else ""), id="post-category") }}
+                        {% if form.category_id.errors %}
+                            <div class="invalid-feedback d-block">{{ form.category_id.errors[0] }}</div>
+                        {% endif %}
+                    </div>
+                    {% if editing and post and post.image_filename %}
+                        <div class="mb-3">
+                            <p class="form-label mb-1">Current cover</p>
+                            <img src="{{ url_for('static', filename='uploads/posts/' + post.image_filename) }}"
+                                 class="rounded border" alt="" style="max-height: 160px;">
+                            <div class="form-check mt-2">
+                                {{ form.remove_image(class="form-check-input", id="remove-image") }}
+                                {{ form.remove_image.label(class="form-check-label", for="remove-image") }}
+                            </div>
+                        </div>
+                    {% endif %}
+                    <div class="mb-3">
+                        {{ form.image.label(class="form-label") }}
+                        {{ form.image(class="form-control" + (" is-invalid" if form.image.errors else "")) }}
+                        <div class="form-text">Optional. PNG, JPG, WebP, or GIF, up to 2 MB.</div>
+                        {% if form.image.errors %}
+                            <div class="invalid-feedback d-block">{{ form.image.errors[0] }}</div>
                         {% endif %}
                     </div>
                     <div class="mb-4">
                         {{ form.description.label(class="form-label") }}
-                        {{ form.description(class="form-control" + (" is-invalid" if form.description.errors else ""), rows=10, placeholder="Describe what you offer and any expectations…", id="post-description") }}
+                        <p class="form-text small mb-2">Rich text: <strong>Markdown</strong> is supported (headings, lists, links, bold, code blocks, tables). Stored safely as plain Markdown.</p>
+                        {{ form.description(class="form-control" + (" is-invalid" if form.description.errors else ""), rows=12, placeholder="Describe what you offer (Markdown ok: **bold**, lists, [links](https://…), etc.)", id="post-description") }}
                         <div id="post-desc-err" class="invalid-feedback d-none"></div>
                         {% if form.description.errors %}
                             <div class="invalid-feedback d-block">{{ form.description.errors[0] }}</div>

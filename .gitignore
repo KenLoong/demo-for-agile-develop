@@ -13,5 +13,9 @@ instance/
 # 本地环境变量（ secrets ）
 .env
 
+# 用户上传的配图（保留目录结构）
+static/uploads/posts/*
+!static/uploads/posts/.gitkeep
+
 # 忽略 Mac 系统文件
 .DS_Store

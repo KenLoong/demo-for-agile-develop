@@ -16,8 +16,15 @@ In a university environment, students possess diverse talents beyond their prima
 ### Design & Features
 *   **User Authentication:** Secure login/logout with Flask-Login; registration enforces `@student.uwa.edu.au` email and password hashing.
 *   **Skill Management (CRUD):** Users can post skills, edit or delete their own listings.
-*   **Dynamic Discovery:** Homepage with **jQuery AJAX** category filtering against `/api/filter`, plus keyword search (title and description).
-*   **Interaction:** Comments on posts (**AJAX** submit without a full page reload); **Express interest** with dashboard views for received and sent requests (including contact email).
+*   **Dynamic Discovery:** Homepage with **jQuery AJAX** category filtering against `/api/filter`, **pagination**, **sort** (newest / most interest), and keyword search (title and description).
+*   **Categories:** Normalised **`Category`** table (slug + label) with seed data and Alembic migrations—not a free-text field on posts.
+*   **Cover images:** Optional **post cover** upload (validated type/size, stored under `static/uploads/posts/`, ignored by Git except `.gitkeep`).
+*   **Rich descriptions:** Post bodies use **Markdown** (rendered with **Bleach** sanitisation). Card previews use plain-text snippets derived from Markdown.
+*   **Engagement:** Each post stores **comment** and **like** counts (updated when comments are added or likes toggled). Discovery cards and the post header show both; logged-in users (except the author) can **like/unlike** via AJAX. Sort option **Most likes** is available on Discover.
+*   **Public profiles:** **`/user/<username>`** lists that member’s skills — also linked from the **Profile** nav item (your page), author names on cards, comments, and dashboard rows.
+*   **For you:** Logged-in users see **recommended skills** from categories they’ve posted in or shown interest in (excluding their own posts and ones they’ve already marked as interested).
+*   **Save for later:** Bookmark posts (not your own); manage them under **Dashboard → Saved for later**.
+*   **Interaction:** Comments on posts (**AJAX** submit without a full page reload); **Express interest** with dashboard views for **interests received** (who contacted you about your posts) and **my interests** (skills you marked as interested), including contact email for inbound interest.
 *   **Security & config:** **CSRF protection** (Flask-WTF) on forms and AJAX `POST`s; `SECRET_KEY` and optional `DATABASE_URL` read from the environment.
 *   **UI:** Responsive layouts with **Bootstrap 5** and lightweight **client-side validation** on register, login, and post forms.
 
