@@ -48,7 +48,7 @@ In a university environment, students possess diverse talents beyond their prima
 | :--- | :--- | :--- |
 | `[24702822]` | Warson | [Warson Long](https://github.com/WarsonLong) |
 | `[24319908]` | Dylan | [Yuxuan Xi](https://github.com/dylayXi) |
-| `[24902808]` | Shawn | [Shawn Wang](https://github.com/Lipo021) |
+| `[24920808]` | Shawn | [Shawn Wang](https://github.com/Lipo021) |
 | `[24684008]` | Nuwanga | [Nuwanga Niroshan](https://github.com/NuwangaNiroshan) |
 
 ---
@@ -148,10 +148,36 @@ On Windows, use `set FLASK_APP=app.py` instead of `export`.
 
 ## 🧪 Tests
 
-Automated tests are **not included** in this repository yet. If you add a `tests/` package, you can run them with:
+The repository includes:
+
+* **Unit / route tests** for authentication, access control, interests, and like toggling
+* **Selenium browser tests** for end-to-end flows against a live Flask server
+
+Install test dependencies with:
+```bash
+pip install -r requirements-dev.txt
+```
+
+Run all tests:
 ```bash
 python -m unittest discover tests
 ```
+
+Run only the unit tests:
+```bash
+python -m unittest tests.test_unit
+```
+
+Run only the Selenium tests:
+```bash
+python -m unittest tests.test_selenium
+```
+
+### Selenium notes
+
+* The Selenium suite starts a **live local Flask server** automatically.
+* Install **Chrome/Chromium** and **chromedriver**, or set `CHROMEDRIVER_PATH` if your driver is not on `PATH`.
+* If Chromium is installed in a non-standard location, set `CHROME_BIN`.
 
 ---
 
