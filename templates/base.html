@@ -22,12 +22,17 @@
                 <li class="nav-item">
                     <a class="nav-link" href="{{ url_for('index') }}">Discover</a>
                 </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('stats') }}">Stats</a>
+                </li>
                 {% if current_user.is_authenticated %}
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('user_profile', username=current_user.username) }}">Profile</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('dashboard') }}">Dashboard</a>
+                <li class="nav-item">
+                    <a class="nav-link position-relative" href="{{ url_for('dashboard') }}">
+                            Dashboard
+                            {% if unread_notif_count %}
+                                <span class="notif-dot" aria-label="{{ unread_notif_count }} unread notifications"></span>
+                            {% endif %}
+                        </a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('new_post') }}">Post a skill</a>
@@ -37,7 +42,9 @@
             <ul class="navbar-nav ms-auto">
                 {% if current_user.is_authenticated %}
                     <li class="nav-item">
-                        <span class="navbar-text me-3 text-white-50 small">Hi, {{ current_user.username }}</span>
+                        <a class="nav-link text-white-50 small" href="{{ url_for('user_profile', username=current_user.username) }}">
+                            {{ current_user.username }}
+                        </a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('logout') }}">Log out</a>

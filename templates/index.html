@@ -61,7 +61,7 @@
 <hr class="my-4">
 {% endif %}
 
-<div class="row g-3 align-items-end mb-3">
+<div class="row g-3 align-items-end mb-2">
     <div class="col-md-8">
         <div class="d-flex flex-wrap gap-2 align-items-center" id="category-bar" role="tablist" aria-label="Filter by category">
             <span class="text-muted small me-1">Category:</span>
@@ -82,6 +82,16 @@
         </select>
     </div>
 </div>
+
+{% if popular_tags %}
+<div class="d-flex flex-wrap gap-2 align-items-center mb-3" id="tag-bar" aria-label="Filter by tag">
+    <span class="text-muted small me-1">Tags:</span>
+    {% for tag in popular_tags %}
+        <button type="button" class="btn btn-sm tag-pill tag-filter-btn"
+                data-tag="{{ tag.slug }}">#{{ tag.label }}</button>
+    {% endfor %}
+</div>
+{% endif %}
 
 <div id="post-grid" class="row g-3">
     {% if posts %}
@@ -116,7 +126,21 @@
                                 {{ post.description|markdown_snippet(120) }}
                             </a>
                         </p>
-                        <p class="small text-muted mb-0">{{ post.comment_count }} comments · {{ post.like_count }} likes</p>
+                        <div class="d-flex align-items-center justify-content-between mt-1">
+                            <p class="small text-muted mb-0">{{ post.comment_count }} comments · {{ post.like_count }} likes</p>
+                            <span class="badge status-badge status-{{ post.status }}">
+                                {% if post.status == 'open' %}🟢 Open
+                                {% elif post.status == 'matched' %}🤝 Matched
+                                {% else %}⭕ Closed{% endif %}
+                            </span>
+                        </div>
+                        {% if post.tags %}
+                            <div class="d-flex flex-wrap gap-1 mt-2">
+                                {% for tag in post.tags[:4] %}
+                                    <span class="tag-pill">#{{ tag.label }}</span>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
                     </div>
                 </div>
             </div>

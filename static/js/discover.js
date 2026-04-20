@@ -3,19 +3,21 @@
  *
  * Handles:
  *  - Category pill click → AJAX filter via /api/filter
+ *  - Tag pill click      → AJAX filter by tag
  *  - Sort-select change  → AJAX filter
  *  - Search form submit  → AJAX filter
  *  - Pager button click  → AJAX paginated fetch
- *  - Renders post cards and pagination controls from JSON response
+ *  - Renders post cards (with status badge + tags) and pagination controls
  */
 
 (function () {
     'use strict';
 
-    var $grid   = $('#post-grid');
-    var $pager  = $('#pager-wrap');
+    var $grid  = $('#post-grid');
+    var $pager = $('#pager-wrap');
 
     var currentCategory = 'all';
+    var currentTag      = '';
     var currentQuery    = '';
     var currentSort     = $('#sort-select').val() || 'newest';
     var currentPage     = 1;
@@ -24,7 +26,6 @@
        Helpers
     ------------------------------------------------------------------ */
 
-    /** Deterministic hue from a string (used for avatar colours). */
     function avatarHue(str) {
         var h = 0;
         for (var i = 0; i < str.length; i++) {
@@ -33,22 +34,30 @@
         return Math.abs(h) % 360;
     }
 
-    /** Safe HTML-escape via jQuery. */
     function esc(s) {
         return $('<div>').text(s == null ? '' : String(s)).html();
     }
 
-    var categoryBadgeClass = {
-        coding:   'primary',
-        language: 'success',
-        music:    'info',
-        sports:   'warning',
-        other:    'secondary'
-    };
-
     /* ------------------------------------------------------------------
        Rendering
     ------------------------------------------------------------------ */
+
+    function statusBadgeHtml(status) {
+        var map = {
+            open:    '🟢 Open',
+            matched: '🤝 Matched',
+            closed:  '⭕ Closed'
+        };
+        var label = map[status] || status;
+        return '<span class="badge status-badge status-' + esc(status) + '">' + label + '</span>';
+    }
+
+    function tagsHtml(tags) {
+        if (!tags || !tags.length) { return ''; }
+        return tags.slice(0, 4).map(function (t) {
+            return '<span class="tag-pill">#' + esc(t.label) + '</span>';
+        }).join('');
+    }
 
     function renderPosts(payload) {
         var items = payload.posts || [];
@@ -61,12 +70,12 @@
         var html = items.map(function (p) {
             var initial    = (p.author && p.author.charAt(0)) ? p.author.charAt(0).toUpperCase() : '?';
             var hue        = avatarHue(p.author || '');
-            var badge      = categoryBadgeClass[p.category_slug] || 'secondary';
             var detailUrl  = '/post/' + p.id;
             var profileUrl = p.author_profile || ('/user/' + encodeURIComponent(p.author));
             var imgHtml    = p.image_url
                 ? '<a href="' + esc(detailUrl) + '" class="d-block"><img src="' + esc(p.image_url) + '" class="w-100 object-fit-cover" alt="" style="height:140px"></a>'
                 : '';
+            var footerTags = tagsHtml(p.tags);
 
             return (
                 '<div class="col-md-6 col-xl-4">' +
@@ -76,7 +85,7 @@
                             '<div class="d-flex align-items-start gap-3 mb-2">' +
                                 '<span class="avatar-circle flex-shrink-0" style="background:hsl(' + hue + ',55%,42%)">' + esc(initial) + '</span>' +
                                 '<div class="min-w-0">' +
-                                    '<span class="badge bg-' + badge + ' bg-opacity-75 mb-1">' + esc(p.category_label) + '</span>' +
+                                    '<span class="badge bg-primary bg-opacity-75 mb-1">' + esc(p.category_label) + '</span>' +
                                     '<h2 class="h5 card-title text-truncate mb-1">' +
                                         '<a href="' + detailUrl + '" class="text-reset text-decoration-none">' + esc(p.title) + '</a>' +
                                     '</h2>' +
@@ -88,10 +97,14 @@
                             '<p class="card-text text-body-secondary small flex-grow-1 mb-1">' +
                                 '<a href="' + detailUrl + '" class="text-body-secondary text-decoration-none">' + esc(p.snippet) + '</a>' +
                             '</p>' +
-                            '<p class="small text-muted mb-0">' +
-                                (p.comment_count != null ? p.comment_count : 0) + ' comments · ' +
-                                (p.like_count    != null ? p.like_count    : 0) + ' likes' +
-                            '</p>' +
+                            '<div class="d-flex align-items-center justify-content-between mt-1">' +
+                                '<p class="small text-muted mb-0">' +
+                                    (p.comment_count != null ? p.comment_count : 0) + ' comments · ' +
+                                    (p.like_count    != null ? p.like_count    : 0) + ' likes' +
+                                '</p>' +
+                                statusBadgeHtml(p.status) +
+                            '</div>' +
+                            (footerTags ? '<div class="d-flex flex-wrap gap-1 mt-2">' + footerTags + '</div>' : '') +
                         '</div>' +
                     '</div>' +
                 '</div>'
@@ -130,11 +143,21 @@
         }).addClass('active');
     }
 
+    function syncTagPills() {
+        $('#tag-bar .tag-filter-btn').removeClass('active');
+        if (currentTag) {
+            $('#tag-bar .tag-filter-btn').filter(function () {
+                return $(this).data('tag') === currentTag;
+            }).addClass('active');
+        }
+    }
+
     function fetchPosts(page) {
         currentPage = page || 1;
         $grid.addClass('opacity-50');
         $.getJSON('/api/filter', {
             category: currentCategory,
+            tag:      currentTag,
             query:    currentQuery,
             sort:     currentSort,
             page:     currentPage
@@ -153,6 +176,14 @@
     $('#category-bar').on('click', '.category-pill', function () {
         currentCategory = $(this).data('category');
         syncCategoryPills();
+        fetchPosts(1);
+    });
+
+    /* Tag bar – clicking an active tag deselects it */
+    $('#tag-bar').on('click', '.tag-filter-btn', function () {
+        var slug = $(this).data('tag');
+        currentTag = (currentTag === slug) ? '' : slug;
+        syncTagPills();
         fetchPosts(1);
     });
 
