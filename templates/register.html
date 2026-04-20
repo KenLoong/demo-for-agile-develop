@@ -54,52 +54,5 @@
 {% endblock %}
 
 {% block scripts %}
-<script>
-(function () {
-    var form = document.getElementById('register-form');
-    if (!form) return;
-    function pair(fieldId, errId) {
-        return {
-            field: document.getElementById(fieldId),
-            err: document.getElementById(errId)
-        };
-    }
-    var u = pair('reg-username', 'reg-username-err');
-    var e = pair('reg-email', 'reg-email-err');
-    var p = pair('reg-password', 'reg-password-err');
-    var c = pair('reg-confirm', 'reg-confirm-err');
-
-    function show(pair, msg) {
-        if (!pair.field || !pair.err) return;
-        pair.err.textContent = msg || '';
-        pair.err.classList.toggle('d-none', !msg);
-        pair.field.classList.toggle('is-invalid', !!msg);
-    }
-
-    form.addEventListener('submit', function (ev) {
-        [u, e, p, c].forEach(function (x) { show(x, ''); });
-        var ok = true;
-        var uname = u.field ? u.field.value.trim() : '';
-        if (uname.length < 2) {
-            show(u, 'Username must be at least 2 characters.');
-            ok = false;
-        }
-        var em = e.field ? e.field.value.trim().toLowerCase() : '';
-        if (!em.endsWith('@student.uwa.edu.au') || em.indexOf('@') < 1) {
-            show(e, 'Use your @student.uwa.edu.au email.');
-            ok = false;
-        }
-        var pw = p.field ? p.field.value : '';
-        if (pw.length < 6) {
-            show(p, 'Password must be at least 6 characters.');
-            ok = false;
-        }
-        if (c.field && pw !== c.field.value) {
-            show(c, 'Passwords do not match.');
-            ok = false;
-        }
-        if (!ok) ev.preventDefault();
-    });
-})();
-</script>
+<script src="{{ url_for('static', filename='js/register.js') }}"></script>
 {% endblock %}

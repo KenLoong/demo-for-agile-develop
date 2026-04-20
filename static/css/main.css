@@ -1,0 +1,433 @@
+/* =====================================================================
+   UWA Skill-Swap – main.css
+   Custom styles on top of Bootstrap 5. All site-specific selectors and
+   component overrides live here so the Jinja templates stay clean.
+   ===================================================================== */
+
+/* ------------------------------------------------------------------
+   1. Design tokens (CSS custom properties)
+   ------------------------------------------------------------------ */
+:root {
+    --uwa-navy:        #003087;
+    --uwa-navy-dark:   #001f5c;
+    --uwa-teal:        #0b4f6c;
+    --card-radius:     0.625rem;
+    --transition-fast: 0.18s ease;
+}
+
+/* ------------------------------------------------------------------
+   2. Base / typography
+   ------------------------------------------------------------------ */
+body {
+    font-size: 0.9375rem;
+}
+
+a {
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+code {
+    font-size: 0.875em;
+    color: var(--uwa-navy);
+}
+
+/* ------------------------------------------------------------------
+   3. Utilities
+   ------------------------------------------------------------------ */
+.min-w-0 {
+    min-width: 0;
+}
+
+.object-fit-cover {
+    object-fit: cover;
+}
+
+.transition-opacity {
+    transition: opacity var(--transition-fast);
+}
+
+/* ------------------------------------------------------------------
+   4. Navbar
+   ------------------------------------------------------------------ */
+.navbar-brand {
+    font-weight: 600;
+    letter-spacing: 0.025em;
+    font-size: 1.1rem;
+}
+
+.navbar .nav-link {
+    font-size: 0.9rem;
+    padding-left: 0.85rem;
+    padding-right: 0.85rem;
+    transition: color var(--transition-fast);
+}
+
+.navbar .nav-link:hover {
+    color: #fff !important;
+}
+
+/* ------------------------------------------------------------------
+   5. Hero banner
+   ------------------------------------------------------------------ */
+.hero-skill-swap {
+    background: linear-gradient(
+        135deg,
+        var(--uwa-navy) 0%,
+        var(--uwa-navy-dark) 55%,
+        var(--uwa-teal) 100%
+    );
+    color: #fff;
+    border-radius: 0 0 1.25rem 1.25rem;
+}
+
+.hero-skill-swap h1 {
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+}
+
+.hero-skill-swap p {
+    font-size: 1.05rem;
+}
+
+.hero-skill-swap .form-control {
+    border: none;
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.35);
+}
+
+.hero-skill-swap .form-control:focus {
+    box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.6);
+}
+
+/* ------------------------------------------------------------------
+   6. Category pills (filter bar)
+   ------------------------------------------------------------------ */
+.category-pill {
+    border-radius: 2rem;
+    font-size: 0.8125rem;
+    transition: background-color var(--transition-fast),
+                color var(--transition-fast),
+                box-shadow var(--transition-fast);
+}
+
+.category-pill:hover {
+    background-color: #0d6efd;
+    color: #fff;
+    border-color: #0d6efd;
+}
+
+.category-pill.active {
+    background-color: #0d6efd;
+    color: #fff;
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 2px #0d6efd inset;
+}
+
+/* ------------------------------------------------------------------
+   7. Post cards
+   ------------------------------------------------------------------ */
+.post-card {
+    border-radius: var(--card-radius);
+    transition: transform var(--transition-fast),
+                box-shadow var(--transition-fast);
+}
+
+.post-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12) !important;
+}
+
+.post-card .card-title {
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.post-card .card-title a {
+    color: inherit;
+}
+
+.post-card .card-title a:hover {
+    color: var(--uwa-navy);
+    text-decoration: none;
+}
+
+.post-card .card-body {
+    padding: 1rem;
+}
+
+/* ------------------------------------------------------------------
+   8. Avatar circle
+   ------------------------------------------------------------------ */
+.avatar-circle {
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: #fff;
+    flex-shrink: 0;
+    user-select: none;
+}
+
+/* ------------------------------------------------------------------
+   9. Post detail – Markdown body
+   ------------------------------------------------------------------ */
+.post-body {
+    max-width: 100%;
+    overflow-wrap: break-word;
+    line-height: 1.72;
+}
+
+.post-body h1 {
+    font-size: 1.35rem;
+    margin-top: 1.25rem;
+    margin-bottom: 0.5rem;
+}
+
+.post-body h2 {
+    font-size: 1.2rem;
+    margin-top: 1.1rem;
+    margin-bottom: 0.45rem;
+}
+
+.post-body h3 {
+    font-size: 1.05rem;
+    margin-top: 0.9rem;
+    margin-bottom: 0.4rem;
+}
+
+.post-body p:last-child {
+    margin-bottom: 0;
+}
+
+.post-body a {
+    color: var(--uwa-navy);
+    text-decoration: underline;
+}
+
+.post-body a:hover {
+    color: var(--uwa-teal);
+}
+
+.post-body pre {
+    background: #f8f9fa;
+    padding: 0.75rem 1rem;
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
+    overflow-x: auto;
+    border: 1px solid #e9ecef;
+}
+
+.post-body code {
+    background: #f0f4ff;
+    padding: 0.1em 0.35em;
+    border-radius: 0.2em;
+    font-size: 0.875em;
+    color: var(--uwa-navy);
+}
+
+.post-body pre code {
+    background: none;
+    padding: 0;
+}
+
+.post-body blockquote {
+    border-left: 3px solid #dee2e6;
+    padding-left: 1rem;
+    margin-left: 0;
+    color: #6c757d;
+    font-style: italic;
+}
+
+.post-body ul,
+.post-body ol {
+    padding-left: 1.5rem;
+    margin-bottom: 1rem;
+}
+
+.post-body table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 1rem;
+    font-size: 0.9rem;
+}
+
+.post-body table th,
+.post-body table td {
+    border: 1px solid #dee2e6;
+    padding: 0.5rem 0.75rem;
+    text-align: left;
+}
+
+.post-body table th {
+    background: #f8f9fa;
+    font-weight: 600;
+}
+
+.post-body img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 0.375rem;
+}
+
+/* ------------------------------------------------------------------
+   10. Post cover image
+   ------------------------------------------------------------------ */
+.post-cover {
+    max-height: 360px;
+    width: 100%;
+    object-fit: cover;
+    border-radius: var(--card-radius);
+}
+
+/* ------------------------------------------------------------------
+   11. Comment list
+   ------------------------------------------------------------------ */
+.comment-text {
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+#comment-list .list-group-item {
+    border-left: none;
+    border-right: none;
+    transition: background-color var(--transition-fast);
+}
+
+#comment-list .list-group-item:first-child {
+    border-top: none;
+}
+
+#comment-list .list-group-item:hover {
+    background-color: #f8f9ff;
+}
+
+/* ------------------------------------------------------------------
+   12. Auth forms (login / register pages)
+   ------------------------------------------------------------------ */
+.auth-card {
+    border-radius: var(--card-radius);
+}
+
+.auth-card .card-body {
+    padding: 2rem 2.5rem;
+}
+
+@media (max-width: 576px) {
+    .auth-card .card-body {
+        padding: 1.5rem 1.25rem;
+    }
+}
+
+/* ------------------------------------------------------------------
+   13. Dashboard tabs
+   ------------------------------------------------------------------ */
+.nav-tabs .nav-link {
+    color: #495057;
+    border-radius: 0.375rem 0.375rem 0 0;
+    font-size: 0.9rem;
+}
+
+.nav-tabs .nav-link.active {
+    color: var(--uwa-navy);
+    font-weight: 600;
+}
+
+.tab-content .tab-pane table td,
+.tab-content .tab-pane table th {
+    vertical-align: middle;
+}
+
+/* ------------------------------------------------------------------
+   14. User profile page
+   ------------------------------------------------------------------ */
+.user-profile-header {
+    border-bottom: 1px solid #dee2e6;
+    padding-bottom: 1.25rem;
+    margin-bottom: 1.5rem;
+}
+
+.user-profile-avatar {
+    width: 4rem;
+    height: 4rem;
+    font-size: 1.5rem;
+}
+
+/* ------------------------------------------------------------------
+   15. Interaction buttons (detail page)
+   ------------------------------------------------------------------ */
+#interest-btn {
+    min-width: 8rem;
+    transition: background-color var(--transition-fast),
+                border-color var(--transition-fast);
+}
+
+#interest-btn:disabled {
+    cursor: default;
+    opacity: 0.75;
+}
+
+#like-btn {
+    min-width: 5.5rem;
+    transition: color var(--transition-fast),
+                border-color var(--transition-fast);
+}
+
+#like-btn[data-liked="true"] {
+    color: #dc3545;
+    border-color: #dc3545;
+}
+
+#bookmark-btn {
+    min-width: 8rem;
+    transition: color var(--transition-fast),
+                border-color var(--transition-fast);
+}
+
+/* ------------------------------------------------------------------
+   16. Footer
+   ------------------------------------------------------------------ */
+footer {
+    font-size: 0.8125rem;
+    letter-spacing: 0.01em;
+}
+
+footer a {
+    color: #6c757d;
+}
+
+footer a:hover {
+    color: var(--uwa-navy);
+}
+
+/* ------------------------------------------------------------------
+   17. Responsive adjustments
+   ------------------------------------------------------------------ */
+@media (max-width: 576px) {
+    .hero-skill-swap {
+        border-radius: 0;
+        padding-left: 1rem !important;
+        padding-right: 1rem !important;
+    }
+
+    .post-card:hover {
+        transform: none;
+    }
+
+    .avatar-circle {
+        width: 2rem;
+        height: 2rem;
+        font-size: 0.8rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .hero-skill-swap h1 {
+        font-size: 1.4rem;
+    }
+}
