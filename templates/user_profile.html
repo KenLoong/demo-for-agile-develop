@@ -27,15 +27,25 @@
         </p>
 
         {# "Wants to learn" badges (read-only view for other users) #}
-        {% if not is_owner and profile_user.wanted_categories %}
-            <div class="d-flex flex-wrap gap-2 align-items-center mt-2">
-                <span class="small text-muted">Wants to learn:</span>
-                {% for cat in profile_user.wanted_categories %}
-                    <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle">
-                        {{ cat.label }}
-                    </span>
-                {% endfor %}
-            </div>
+        {% if not is_owner %}
+            {% if profile_user.wanted_categories %}
+                <div class="d-flex flex-wrap gap-2 align-items-center mt-2">
+                    <span class="small text-muted">Wants to learn:</span>
+                    {% for cat in profile_user.wanted_categories %}
+                        <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle">
+                            {{ cat.label }}
+                        </span>
+                    {% endfor %}
+                </div>
+            {% endif %}
+            {% if current_user.is_authenticated %}
+                <div class="mt-2">
+                    <a href="{{ url_for('conversation', username=profile_user.username) }}"
+                       class="btn btn-sm btn-outline-primary">
+                        💬 Message
+                    </a>
+                </div>
+            {% endif %}
         {% endif %}
     </div>
 </div>

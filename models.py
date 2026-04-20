@@ -116,6 +116,19 @@ class Comment(db.Model):
     user = db.relationship('User', backref='comments')
 
 
+class Message(db.Model):
+    """Private direct message between two users."""
+    id           = db.Column(db.Integer,  primary_key=True)
+    sender_id    = db.Column(db.Integer,  db.ForeignKey('user.id'), nullable=False)
+    recipient_id = db.Column(db.Integer,  db.ForeignKey('user.id'), nullable=False)
+    content      = db.Column(db.Text,     nullable=False)
+    read         = db.Column(db.Boolean,  nullable=False, default=False)
+    timestamp    = db.Column(db.DateTime, default=datetime.utcnow)
+
+    sender    = db.relationship('User', foreign_keys=[sender_id],    backref='sent_messages')
+    recipient = db.relationship('User', foreign_keys=[recipient_id], backref='received_messages')
+
+
 class Notification(db.Model):
     """@mention notification delivered to a user."""
     id         = db.Column(db.Integer, primary_key=True)

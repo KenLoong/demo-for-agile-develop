@@ -8,7 +8,7 @@ from flask_wtf.csrf import CSRFProtect
 from sqlalchemy import func
 from werkzeug.security import generate_password_hash, check_password_hash
 
-from models import db, User, Post, Comment, Interest, Category, Bookmark, PostLike, Tag, Notification, post_tags
+from models import db, User, Post, Comment, Interest, Category, Bookmark, PostLike, Tag, Notification, Message, post_tags
 from forms import RegistrationForm, LoginForm, PostForm, CommentForm
 from uploads_util import save_post_image, delete_post_image
 from md_format import render_post_markdown, markdown_plain_snippet
@@ -32,11 +32,16 @@ login_manager.login_message_category = 'info'
 
 @app.context_processor
 def inject_globals():
-    """Inject unread notification count into every template."""
-    unread = 0
+    """Inject unread notification + message counts into every template."""
+    unread_notifs = 0
+    unread_msgs   = 0
     if current_user.is_authenticated:
-        unread = Notification.query.filter_by(user_id=current_user.id, read=False).count()
-    return {'unread_notif_count': unread}
+        unread_notifs = Notification.query.filter_by(user_id=current_user.id, read=False).count()
+        unread_msgs   = Message.query.filter_by(recipient_id=current_user.id, read=False).count()
+    return {
+        'unread_notif_count': unread_notifs,
+        'unread_msg_count':   unread_msgs,
+    }
 
 
 @app.template_filter('post_markdown')
@@ -823,6 +828,140 @@ def api_dashboard_charts():
         'category_distribution': [{'label': r.label, 'count': r.cnt} for r in cat_dist],
         'daily_activity':        daily_activity,
     })
+
+
+# ------------------------------------------------------------------
+# 8. Private messaging
+# ------------------------------------------------------------------
+
+def _inbox_conversations(user):
+    """
+    Return a list of dicts, one per unique conversation partner,
+    ordered by the most recent message descending.
+    Each dict: { partner, last_message, unread_count }
+    """
+    from sqlalchemy import or_
+    all_msgs = (
+        Message.query
+        .filter(or_(Message.sender_id == user.id, Message.recipient_id == user.id))
+        .order_by(Message.timestamp.desc())
+        .all()
+    )
+    seen      = set()
+    convos    = []
+    for msg in all_msgs:
+        pid = msg.recipient_id if msg.sender_id == user.id else msg.sender_id
+        if pid in seen:
+            continue
+        seen.add(pid)
+        partner      = db.session.get(User, pid)
+        unread_count = Message.query.filter_by(
+            sender_id=pid, recipient_id=user.id, read=False
+        ).count()
+        convos.append({'partner': partner, 'last_message': msg, 'unread_count': unread_count})
+    return convos
+
+
+@app.route('/messages')
+@login_required
+def messages_inbox():
+    convos = _inbox_conversations(current_user)
+    return render_template('messages.html', title='Messages', convos=convos)
+
+
+@app.route('/messages/<username>')
+@login_required
+def conversation(username):
+    from sqlalchemy import or_, and_
+    partner = User.query.filter_by(username=username).first_or_404()
+    if partner.id == current_user.id:
+        return redirect(url_for('messages_inbox'))
+
+    msgs = (
+        Message.query
+        .filter(or_(
+            and_(Message.sender_id == current_user.id, Message.recipient_id == partner.id),
+            and_(Message.sender_id == partner.id,      Message.recipient_id == current_user.id),
+        ))
+        .order_by(Message.timestamp)
+        .all()
+    )
+    # Mark received messages as read
+    Message.query.filter_by(
+        sender_id=partner.id, recipient_id=current_user.id, read=False
+    ).update({'read': True})
+    db.session.commit()
+
+    last_id = msgs[-1].id if msgs else 0
+    return render_template(
+        'conversation.html',
+        title=f'Chat with {partner.username}',
+        partner=partner,
+        messages=msgs,
+        last_id=last_id,
+    )
+
+
+@app.route('/api/messages/<username>', methods=['POST'])
+@login_required
+def send_message(username):
+    from sqlalchemy import or_, and_
+    partner = User.query.filter_by(username=username).first_or_404()
+    if partner.id == current_user.id:
+        return jsonify({'ok': False, 'message': 'Cannot message yourself.'}), 400
+
+    data    = request.get_json(silent=True, force=True) or {}
+    content = (data.get('content') or '').strip()
+    if not content:
+        return jsonify({'ok': False, 'message': 'Message cannot be empty.'}), 400
+    if len(content) > 2000:
+        return jsonify({'ok': False, 'message': 'Message too long (max 2000 chars).'}), 400
+
+    msg = Message(sender_id=current_user.id, recipient_id=partner.id, content=content)
+    db.session.add(msg)
+    db.session.commit()
+    return jsonify({
+        'ok':        True,
+        'id':        msg.id,
+        'content':   msg.content,
+        'timestamp': msg.timestamp.strftime('%H:%M'),
+        'is_mine':   True,
+    })
+
+
+@app.route('/api/messages/poll/<username>')
+@login_required
+def poll_messages(username):
+    from sqlalchemy import or_, and_
+    partner  = User.query.filter_by(username=username).first_or_404()
+    after_id = request.args.get('after', 0, type=int)
+
+    msgs = (
+        Message.query
+        .filter(
+            or_(
+                and_(Message.sender_id == current_user.id, Message.recipient_id == partner.id),
+                and_(Message.sender_id == partner.id,      Message.recipient_id == current_user.id),
+            ),
+            Message.id > after_id,
+        )
+        .order_by(Message.timestamp)
+        .all()
+    )
+    # Mark any newly received messages as read
+    for m in msgs:
+        if m.recipient_id == current_user.id and not m.read:
+            m.read = True
+    if msgs:
+        db.session.commit()
+
+    return jsonify([{
+        'id':        m.id,
+        'content':   m.content,
+        'sender':    m.sender.username,
+        'timestamp': m.timestamp.strftime('%H:%M'),
+        'is_mine':   m.sender_id == current_user.id,
+    } for m in msgs])
 
 
 if __name__ == '__main__':

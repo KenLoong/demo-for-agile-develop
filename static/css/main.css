@@ -568,7 +568,82 @@ footer a:hover {
 }
 
 /* ------------------------------------------------------------------
-   21. Markdown editor – Write / Preview
+   21. Private messaging – chat UI
+   ------------------------------------------------------------------ */
+
+/* Outer card acts as the viewport */
+.chat-window {
+    height: calc(100vh - 220px);
+    min-height: 420px;
+    border-radius: var(--card-radius);
+    overflow: hidden;
+}
+
+/* Scrollable message area */
+.chat-body {
+    overflow-y: auto;
+    scroll-behavior: smooth;
+    background: #f8fafc;
+}
+
+/* Chat bubbles */
+.chat-bubble {
+    max-width: 72%;
+    padding: 0.5rem 0.875rem 0.35rem;
+    border-radius: 1.25rem;
+    word-break: break-word;
+    line-height: 1.45;
+}
+
+.chat-bubble-mine {
+    background: var(--uwa-navy);
+    color: #fff;
+    border-bottom-right-radius: 0.3rem;
+}
+
+.chat-bubble-theirs {
+    background: #fff;
+    color: #1e293b;
+    border: 1px solid #e2e8f0;
+    border-bottom-left-radius: 0.3rem;
+}
+
+/* Sender name (for theirs only) */
+.chat-sender {
+    display: block;
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--uwa-teal);
+    margin-bottom: 0.15rem;
+}
+
+/* Timestamp inside bubble */
+.chat-time {
+    display: block;
+    font-size: 0.65rem;
+    opacity: 0.65;
+    text-align: right;
+    margin-top: 0.15rem;
+}
+
+/* Auto-grow textarea */
+.chat-input {
+    resize: none;
+    overflow-y: hidden;
+    min-height: 2.4rem;
+    max-height: 10rem;
+    border-radius: 1.25rem;
+    padding: 0.5rem 1rem;
+    line-height: 1.4;
+}
+
+/* Inbox conversation list hover */
+.list-group-item-action:hover {
+    background-color: #f0f6ff;
+}
+
+/* ------------------------------------------------------------------
+   22. Markdown editor – Write / Preview
    ------------------------------------------------------------------ */
 
 /* Preview pane matches the textarea height */
