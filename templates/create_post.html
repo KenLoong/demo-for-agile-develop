@@ -24,6 +24,11 @@
                             <div class="invalid-feedback d-block">{{ form.category_id.errors[0] }}</div>
                         {% endif %}
                     </div>
+                    <div class="mb-3">
+                        {{ form.status.label(class="form-label") }}
+                        {{ form.status(class="form-select", id="post-status") }}
+                        <div class="form-text">Let others know if you're still looking for a swap partner.</div>
+                    </div>
                     {% if editing and post and post.image_filename %}
                         <div class="mb-3">
                             <p class="form-label mb-1">Current cover</p>
@@ -43,14 +48,45 @@
                             <div class="invalid-feedback d-block">{{ form.image.errors[0] }}</div>
                         {% endif %}
                     </div>
+                    <div class="mb-3">
+                        {{ form.tags.label(class="form-label") }}
+                        {# Store initial tag data for JS initialisation #}
+                        {% set init_slugs  = post.tags | map(attribute='slug')  | join(',') if editing and post and post.tags else '' %}
+                        {% set init_labels = post.tags | map(attribute='label') | join(',') if editing and post and post.tags else '' %}
+                        <div id="tag-input-wrap"
+                             class="tag-input-wrap"
+                             data-init-slugs="{{ init_slugs }}"
+                             data-init-labels="{{ init_labels }}">
+                            <div id="tag-pills-container" class="d-flex flex-wrap gap-2 mb-2"></div>
+                            <input type="text" id="tag-text-input" class="form-control"
+                                   placeholder="Type a tag and press Enter or comma — e.g. python, cits1401, beginner"
+                                   autocomplete="off">
+                            <input type="hidden" name="tags" id="tags-hidden" value="{{ init_slugs }}">
+                        </div>
+                        <div class="form-text">{{ form.tags.description }}</div>
+                    </div>
                     <div class="mb-4">
-                        {{ form.description.label(class="form-label") }}
-                        <p class="form-text small mb-2">Rich text: <strong>Markdown</strong> is supported (headings, lists, links, bold, code blocks, tables). Stored safely as plain Markdown.</p>
-                        {{ form.description(class="form-control" + (" is-invalid" if form.description.errors else ""), rows=12, placeholder="Describe what you offer (Markdown ok: **bold**, lists, [links](https://…), etc.)", id="post-description") }}
-                        <div id="post-desc-err" class="invalid-feedback d-none"></div>
-                        {% if form.description.errors %}
-                            <div class="invalid-feedback d-block">{{ form.description.errors[0] }}</div>
-                        {% endif %}
+                        <div class="d-flex align-items-center justify-content-between mb-1 flex-wrap gap-2">
+                            {{ form.description.label(class="form-label mb-0") }}
+                            <div class="btn-group btn-group-sm" role="group" aria-label="Editor mode">
+                                <button type="button" class="btn btn-outline-secondary active" id="md-write-btn">✏️ Write</button>
+                                <button type="button" class="btn btn-outline-secondary" id="md-preview-btn">👁 Preview</button>
+                            </div>
+                        </div>
+                        <p class="form-text small mb-2">
+                            Supports <strong>Markdown</strong>: headings, lists, <code>**bold**</code>, links, code blocks, tables.
+                        </p>
+
+                        <div id="md-write-pane">
+                            {{ form.description(class="form-control font-monospace" + (" is-invalid" if form.description.errors else ""), rows=14, placeholder="Describe what you offer…\n\n**Bold**, _italic_, - lists, [links](https://…), ```code```", id="post-description") }}
+                            <div id="post-desc-err" class="invalid-feedback d-none"></div>
+                            {% if form.description.errors %}
+                                <div class="invalid-feedback d-block">{{ form.description.errors[0] }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div id="md-preview-pane" class="md-preview-box post-body border rounded p-3 d-none"
+                             aria-live="polite"></div>
                     </div>
                     <div class="d-flex flex-wrap gap-2">
                         {{ form.submit(class="btn btn-primary") }}
@@ -66,43 +102,10 @@
 </div>
 {% endblock %}
 
-{% block scripts %}
-<script>
-(function () {
-    var form = document.getElementById('post-form');
-    if (!form) return;
-    var t = document.getElementById('post-title');
-    var d = document.getElementById('post-description');
-    var te = document.getElementById('post-title-err');
-    var de = document.getElementById('post-desc-err');
+{% block head_extra %}
+<script src="https://cdn.jsdelivr.net/npm/marked@9/marked.min.js"></script>
+{% endblock %}
 
-    form.addEventListener('submit', function (ev) {
-        t.classList.remove('is-invalid');
-        d.classList.remove('is-invalid');
-        te.classList.add('d-none');
-        de.classList.add('d-none');
-        var ok = true;
-        var title = t && t.value ? t.value.trim() : '';
-        if (!title) {
-            te.textContent = 'Title is required.';
-            te.classList.remove('d-none');
-            t.classList.add('is-invalid');
-            ok = false;
-        } else if (title.length > 100) {
-            te.textContent = 'Title must be at most 100 characters.';
-            te.classList.remove('d-none');
-            t.classList.add('is-invalid');
-            ok = false;
-        }
-        var desc = d && d.value ? d.value.trim() : '';
-        if (!desc) {
-            de.textContent = 'Description is required.';
-            de.classList.remove('d-none');
-            d.classList.add('is-invalid');
-            ok = false;
-        }
-        if (!ok) ev.preventDefault();
-    });
-})();
-</script>
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/post_form.js') }}"></script>
 {% endblock %}
