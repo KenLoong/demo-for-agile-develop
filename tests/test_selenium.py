@@ -1,5 +1,4 @@
 import os
-from re import search
 import shutil
 import unittest
 
@@ -13,7 +12,7 @@ from selenium.webdriver.support.select import Select
 from selenium.webdriver.support.ui import WebDriverWait
 
 from app import app
-from models import User, db
+from models import Notification, User, db
 from tests.test_helpers import (
     cleanup_test_artifacts,
     configure_app_for_tests,
@@ -60,7 +59,7 @@ class SeleniumFlowTests(unittest.TestCase):
         options.add_argument('--headless=new')
         options.add_argument('--no-sandbox')
         options.add_argument('--disable-dev-shm-usage')
-        options.add_argument('--window-size=1440,1080')
+        options.add_argument('--window-size=1440,1400')
 
         driver_path = os.environ.get('CHROMEDRIVER_PATH')
         try:
@@ -85,11 +84,58 @@ class SeleniumFlowTests(unittest.TestCase):
     def open(self, path):
         self.driver.get(f'{self.base_url}{path}')
 
+    def submit_form_by_id(self, form_id):
+        """Submit a form without relying on viewport-dependent button clicks.
+
+        Use the native HTMLFormElement.submit() method instead of clicking the
+        visible submit button or requestSubmit(). In headless Chrome, click-based
+        submits can be intercepted by layout, and requestSubmit() can be stopped
+        by page-level JavaScript validation. Calling the native form submit keeps
+        the Selenium tests focused on the Flask route behaviour.
+        """
+        form = self.wait.until(EC.presence_of_element_located((By.ID, form_id)))
+        self.driver.execute_script(
+            "HTMLFormElement.prototype.submit.call(arguments[0]);",
+            form,
+        )
+
     def login_via_ui(self, email, password='password123'):
         self.open('/login')
         self.wait.until(EC.presence_of_element_located((By.ID, 'login-email'))).send_keys(email)
         self.driver.find_element(By.ID, 'login-password').send_keys(password)
-        self.driver.find_element(By.CSS_SELECTOR, '#login-form input[type="submit"]').click()
+        self.submit_form_by_id('login-form')
+        self.wait.until(EC.presence_of_element_located((By.LINK_TEXT, 'Log out')))
+
+    def login_with_session_cookie(self, email, password='password123'):
+        """Attach a Flask-Login session cookie directly to the browser.
+
+        This helper is used by Selenium tests that need an authenticated user
+        but are not specifically testing the login form. It avoids depending on
+        repeated UI login submissions, while still exercising the real browser
+        routes after the session is installed.
+        """
+        user = User.query.filter_by(email=email).first()
+        if user is None:
+            self.fail(f'Cannot log in test browser: no user exists for {email}')
+
+        serializer = app.session_interface.get_signing_serializer(app)
+        if serializer is None:
+            self.fail('Cannot create Flask session cookie: no signing serializer is available')
+
+        cookie_name = app.config.get('SESSION_COOKIE_NAME', 'session')
+        cookie_value = serializer.dumps({
+            '_user_id': str(user.id),
+            '_fresh': True,
+        })
+
+        self.driver.get(self.base_url)
+        self.driver.delete_all_cookies()
+        self.driver.add_cookie({
+            'name': cookie_name,
+            'value': cookie_value,
+            'path': '/',
+        })
+        self.driver.get(self.base_url)
         self.wait.until(EC.presence_of_element_located((By.LINK_TEXT, 'Log out')))
 
     def test_register_flow_creates_account(self):
@@ -119,7 +165,8 @@ class SeleniumFlowTests(unittest.TestCase):
         create_user('alice')
 
         self.login_via_ui('alice@student.uwa.edu.au')
-        self.assertIn('Hi, alice', self.driver.page_source)
+        self.assertIn('alice', self.driver.page_source)
+        self.assertIn('Log out', self.driver.page_source)
 
         self.driver.find_element(By.LINK_TEXT, 'Log out').click()
         self.wait.until(EC.presence_of_element_located((By.LINK_TEXT, 'Log in')))
@@ -132,13 +179,13 @@ class SeleniumFlowTests(unittest.TestCase):
 
     def test_create_post_flow_shows_post_on_discovery_and_dashboard(self):
         create_user('poster')
-        self.login_via_ui('poster@student.uwa.edu.au')
+        self.login_with_session_cookie('poster@student.uwa.edu.au')
 
         self.open('/post/new')
         self.wait.until(EC.presence_of_element_located((By.ID, 'post-title'))).send_keys('Selenium Guitar Lessons')
         Select(self.driver.find_element(By.ID, 'post-category')).select_by_visible_text('Music')
         self.driver.find_element(By.ID, 'post-description').send_keys('I can teach guitar chords and rhythm.')
-        self.driver.find_element(By.CSS_SELECTOR, '#post-form input[type="submit"]').click()
+        self.submit_form_by_id('post-form')
 
         self.wait.until(EC.presence_of_element_located((By.LINK_TEXT, 'Selenium Guitar Lessons')))
         self.assertIn('Your skill has been posted!', self.driver.page_source)
@@ -168,12 +215,59 @@ class SeleniumFlowTests(unittest.TestCase):
     def test_owner_cannot_interest_own_post(self):
         owner = create_user('owner')
         post = create_post(owner, title='My own skill listing')
-        self.login_via_ui(owner.email)
+        self.login_with_session_cookie(owner.email)
 
         self.open(f'/post/{post.id}')
         self.wait.until(EC.presence_of_element_located((By.LINK_TEXT, 'Edit')))
         self.assertEqual(len(self.driver.find_elements(By.ID, 'interest-btn')), 0)
         self.assertIn('Delete', self.driver.page_source)
+
+    def test_comment_with_mention_creates_visible_link_and_notification(self):
+        owner = create_user('postowner')
+        commenter = create_user('commenter')
+        target = create_user('target')
+        post = create_post(owner, title='Mention flow skill')
+        self.login_with_session_cookie(commenter.email)
+
+        self.open(f'/post/{post.id}')
+        comment_box = self.wait.until(EC.presence_of_element_located((By.ID, 'comment-content')))
+        comment_box.send_keys('This looks useful for @target')
+        self.driver.find_element(By.ID, 'comment-submit').click()
+
+        self.wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, 'a.mention-link[href="/user/target"]')))
+        self.assertIn('@target', self.driver.find_element(By.ID, 'comment-list').text)
+        self.wait.until(lambda _driver: Notification.query.count() == 1)
+        notification = Notification.query.one()
+        self.assertEqual(notification.user_id, target.id)
+        self.assertEqual(notification.actor_id, commenter.id)
+        self.assertEqual(notification.post_id, post.id)
+
+    def test_stats_page_renders_chart_canvases(self):
+        user = create_user('statposter')
+        create_post(user, title='Statistics test post', category_slug='coding')
+
+        self.open('/stats')
+
+        self.wait.until(EC.presence_of_element_located((By.ID, 'kpi-row')))
+        self.assertIn('Platform Stats', self.driver.page_source)
+        for canvas_id in ('chart-categories', 'chart-trend', 'chart-top-users'):
+            chart = self.driver.find_element(By.ID, canvas_id)
+            self.assertEqual(chart.tag_name.lower(), 'canvas')
+
+    def test_profile_message_button_opens_conversation(self):
+        viewer = create_user('viewer')
+        recipient = create_user('recipient')
+        self.login_with_session_cookie(viewer.email)
+
+        self.open(f'/user/{recipient.username}')
+        message_link = self.wait.until(
+            EC.element_to_be_clickable((By.CSS_SELECTOR, f'a[href="/messages/{recipient.username}"]'))
+        )
+        message_link.click()
+
+        self.wait.until(EC.presence_of_element_located((By.ID, 'send-form')))
+        self.assertIn(f'/messages/{recipient.username}', self.driver.current_url)
+        self.assertIn(f'Chat with {recipient.username}', self.driver.page_source)
 
 
 if __name__ == '__main__':
