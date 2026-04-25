@@ -118,8 +118,9 @@ python seed.py
 
 Test logins (after seeding):
 
-* `a@student.uwa.edu.au` / `password123`
-* `b@student.uwa.edu.au` / `password123`
+* `alice@student.uwa.edu.au` / `password123`
+* `bob@student.uwa.edu.au` / `password123`
+* `carol@student.uwa.edu.au` / `password123`
 
 ### 7. Start the development server
 
@@ -150,8 +151,8 @@ On Windows, use `set FLASK_APP=app.py` instead of `export`.
 
 The repository includes:
 
-* **Unit / route tests** for authentication, access control, interests, and like toggling
-* **Selenium browser tests** for end-to-end flows against a live Flask server
+* **Unit / route tests** — authentication, access control, interest/like toggling, post status, bookmarks, tags, skill matching, @mention notifications, private messaging, and `/api/stats`
+* **Selenium browser tests** — register, login/logout, post creation, search, interest UI, @mention comment, stats charts, and private messaging flow
 
 Install test dependencies with:
 ```bash
