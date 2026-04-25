@@ -37,37 +37,5 @@
 {% endblock %}
 
 {% block scripts %}
-<script>
-(function () {
-    var form = document.getElementById('login-form');
-    if (!form) return;
-    var fe = document.getElementById('login-email');
-    var pe = document.getElementById('login-password');
-    var feErr = document.getElementById('login-email-err');
-    var peErr = document.getElementById('login-password-err');
-
-    form.addEventListener('submit', function (ev) {
-        var ok = true;
-        fe.classList.remove('is-invalid');
-        pe.classList.remove('is-invalid');
-        feErr.classList.add('d-none');
-        peErr.classList.add('d-none');
-
-        var em = fe && fe.value ? fe.value.trim() : '';
-        if (!em || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)) {
-            feErr.textContent = 'Enter a valid email address.';
-            feErr.classList.remove('d-none');
-            fe.classList.add('is-invalid');
-            ok = false;
-        }
-        if (!pe || !pe.value) {
-            peErr.textContent = 'Password is required.';
-            peErr.classList.remove('d-none');
-            pe.classList.add('is-invalid');
-            ok = false;
-        }
-        if (!ok) ev.preventDefault();
-    });
-})();
-</script>
+<script src="{{ url_for('static', filename='js/login.js') }}"></script>
 {% endblock %}
